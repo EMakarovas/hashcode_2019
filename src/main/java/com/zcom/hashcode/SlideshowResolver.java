@@ -1,6 +1,7 @@
 package com.zcom.hashcode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,18 +44,6 @@ public class SlideshowResolver {
 		
 		return new Slideshow(finalSlides);
 	}
-//	
-//	private short[][] generateScoreMatrix(List<Slide> slides) {
-//		final short[][] matrix = new short[slides.size()][slides.size()];
-//		
-//		for(int i=0; i<slides.size(); i++) {
-//			for(int j=0; j<slides.size(); j++) {
-//				final int score = calculateScore(slides.get(i), slides.get(j));
-//				matrix[i][j] = (short) score;
-//			}
-//		}
-//		return matrix;
-//	}
 	
 	private Map<String, Set<Slide>> generateSlidesByTag(List<Slide> slides) {
 		final Map<String, Set<Slide>> map = new HashMap<String, Set<Slide>>();
@@ -75,21 +64,18 @@ public class SlideshowResolver {
 	private List<Slide> generateSlides(Set<Photo> photos) {
 		final Map<Direction, Set<Photo>> photosByDirection = photos.stream()
 				.collect(Collectors.groupingBy(Photo::getDirection, Collectors.toSet()));
-		
-		
-		
-		
+
 		return photosByDirection.entrySet().stream()
 				.map(entry -> {
 					final Direction direction = entry.getKey();
+					final Set<Photo> photosWithDirection = entry.getValue();
 					switch(direction) {
 					case HORIZONTAL:
-						return entry.getValue().stream()
+						return photosWithDirection.stream()
 								.map(Slide::new)
 								.collect(Collectors.toSet());
 					case VERTICAL:
-						return new HashSet<Slide>(0);
-								
+						return generateSlidesWithVerticalPhotos(photosWithDirection);
 					default:
 						throw new RuntimeException();
 					}
@@ -142,6 +128,19 @@ public class SlideshowResolver {
 			}
 		}
 		return bestSlide;
+	}
+	
+	private Set<Slide> generateSlidesWithVerticalPhotos(Set<Photo> photos) {
+		final List<Photo> photoList = new ArrayList<Photo>(photos);
+		final Set<Slide> returnSet = new HashSet<Slide>();
+		while(photoList.size()>1) {
+			final Photo a = photoList.get(0);
+			final Photo b = photoList.get(1);	
+			returnSet.add(new Slide(new HashSet<Photo>(Arrays.asList(a, b))));
+			photoList.remove(a);
+			photoList.remove(b);
+		}
+		return returnSet;
 	}
 	
 }
