@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import com.zcom.hashcode.photo.Direction;
 import com.zcom.hashcode.photo.Photo;
 import com.zcom.hashcode.photo.Slide;
@@ -27,7 +28,10 @@ public class SlideshowResolver {
 		final List<Slide> finalSlides = new ArrayList<>();
 		finalSlides.add(currentSlide);
 		for(String tag : currentSlide.getTags()) {
-			slidesByTag.get(tag).remove(currentSlide);
+			final Set<Slide> slidez = slidesByTag.get(tag);
+			if(slidez!=null) {
+				slidez.remove(currentSlide);
+			}
 		}
 		slides.remove(currentSlide);
 		
@@ -36,7 +40,10 @@ public class SlideshowResolver {
 			finalSlides.add(bestSlide);
 			currentSlide = bestSlide;
 			for(String tag : bestSlide.getTags()) {
-				slidesByTag.get(tag).remove(bestSlide);
+				final Set<Slide> slidez = slidesByTag.get(tag);
+				if(slidez!=null) {
+					slidez.remove(bestSlide);
+				}
 			}
 			slides.remove(currentSlide);
 		}
@@ -56,6 +63,15 @@ public class SlideshowResolver {
 				}
 				set.add(slide);
 			}
+		}
+		final Set<String> tagsToRemove = new HashSet<String>();
+		for(String tag : map.keySet()) {
+			if(map.get(tag).size()>100) {
+				tagsToRemove.add(tag);
+			}
+		}
+		for(String s : tagsToRemove) {
+			map.remove(s);
 		}
 		return map;
 	}
@@ -87,13 +103,22 @@ public class SlideshowResolver {
 	private int calculateScore(Slide a, Slide b) {
 		final Set<String> tagsA = a.getTags();
 		final Set<String> tagsB = b.getTags();
-		final Set<String> commonSet = new HashSet<>(tagsA);
-		commonSet.retainAll(tagsB);
-		final Set<String> aDifference = new HashSet<>(tagsA);
-		aDifference.removeAll(tagsB);
-	    final Set<String> bDifference = new HashSet<>(tagsB);
-	    bDifference.removeAll(tagsA);
-		return Math.min(commonSet.size(), Math.min(aDifference.size(), bDifference.size()));
+		final int intersection = calculateIntersection(tagsA, tagsB);
+		return Math.min(
+				intersection, 
+				Math.min(
+						tagsA.size()-intersection,
+						tagsB.size()-intersection));
+	}
+	
+	private int calculateIntersection(Set<String> a, Set<String> b) {
+		int existsInBoth = 0;
+		for(String aa : a) {
+			if(b.contains(aa)) {
+				existsInBoth++;
+			}
+		}
+		return existsInBoth;
 	}
 	
 	private Slide getInitialSlide(List<Slide> slides) {
