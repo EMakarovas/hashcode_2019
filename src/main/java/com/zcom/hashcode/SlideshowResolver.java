@@ -2,9 +2,12 @@ package com.zcom.hashcode;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -14,21 +17,27 @@ import com.zcom.hashcode.photo.Slide;
 import com.zcom.hashcode.photo.Slideshow;
 
 public class SlideshowResolver {
-	
-	private static final int FAKE_INDEX = -1;
-	
+		
 	public Slideshow resolveSlideshow(Set<Photo> photos) {
 		final List<Slide> slides = generateSlides(photos);
+		final Map<String, Set<Slide>> slidesByTag = generateSlidesByTag(slides);
+		
 		Slide currentSlide = getInitialSlide(slides);
 		
 		final List<Slide> finalSlides = new ArrayList<Slide>();
 		finalSlides.add(currentSlide);
+		for(String tag : currentSlide.getTags()) {
+			slidesByTag.get(tag).remove(currentSlide);
+		}
 		slides.remove(currentSlide);
 		
 		while(!slides.isEmpty()) {
-			final Slide bestSlide = getHighestScoreSlide(slides, currentSlide);
+			final Slide bestSlide = getHighestScoreSlideFromMap(slides, slidesByTag, currentSlide);
 			finalSlides.add(bestSlide);
 			currentSlide = bestSlide;
+			for(String tag : bestSlide.getTags()) {
+				slidesByTag.get(tag).remove(bestSlide);
+			}
 			slides.remove(currentSlide);
 		}
 		
@@ -46,6 +55,22 @@ public class SlideshowResolver {
 //		}
 //		return matrix;
 //	}
+	
+	private Map<String, Set<Slide>> generateSlidesByTag(List<Slide> slides) {
+		final Map<String, Set<Slide>> map = new HashMap<String, Set<Slide>>();
+		
+		for(Slide slide : slides) {
+			for(String tag : slide.getTags()) {
+				Set<Slide> set = map.get(tag);
+				if(set==null) {
+					set = new HashSet<Slide>();
+					map.put(tag, set);
+				}
+				set.add(slide);
+			}
+		}
+		return map;
+	}
 	
 	private List<Slide> generateSlides(Set<Photo> photos) {
 		final Map<Direction, Set<Photo>> photosByDirection = photos.stream()
@@ -89,12 +114,28 @@ public class SlideshowResolver {
 		return slides.get(0);
 	}
 	
-	private Slide getHighestScoreSlide(List<Slide> slides, Slide currentSlide) {
+	private Slide getHighestScoreSlideFromMap(Collection<Slide> allSlides, Map<String, Set<Slide>> slidesByTag, Slide currentSlide) {
+		final Set<Slide> allSlidesToCheck = currentSlide.getTags().stream()
+				.map(tag -> Optional.ofNullable(slidesByTag.get(tag)).orElse(Collections.emptySet()))
+				.flatMap(Collection::stream)
+				.collect(Collectors.toSet());
+		final Slide highestScoreSlide = getHighestScoreSlide(allSlidesToCheck, currentSlide);
+		if(highestScoreSlide==null) {
+			return allSlides.iterator().next();
+		} else {
+			return highestScoreSlide;
+		}
+	}
+		
+	private Slide getHighestScoreSlide(Collection<Slide> slides, Slide currentSlide) {
 		Slide bestSlide = null;
 		int highestScore = -1;
 	
 		for(Slide slide : slides) {
 			final int currentScore = calculateScore(slide, currentSlide);
+			if(currentScore>1) {
+				return slide;
+			}
 			if(currentScore>highestScore) {
 				highestScore = currentScore;
 				bestSlide = slide;
