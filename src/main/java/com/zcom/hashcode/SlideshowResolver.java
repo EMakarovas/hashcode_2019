@@ -17,41 +17,35 @@ public class SlideshowResolver {
 	
 	private static final int FAKE_INDEX = -1;
 	
-	final Set<Integer> usedIndexes = new HashSet<Integer>();
-
 	public Slideshow resolveSlideshow(Set<Photo> photos) {
 		final List<Slide> slides = generateSlides(photos);
-		final int[][] matrix = generateScoreMatrix(slides);
-		int currentIndex = getInitialSlideIndex(slides, matrix);
+		Slide currentSlide = getInitialSlide(slides);
 		
 		final List<Slide> finalSlides = new ArrayList<Slide>();
-		finalSlides.add(slides.get(currentIndex));
-		usedIndexes.add(currentIndex);
+		finalSlides.add(currentSlide);
+		slides.remove(currentSlide);
 		
-		while(usedIndexes.size()!=slides.size()) {
-			final int bestIndex = getHighestScoreIndex(matrix[currentIndex]);
-			if(bestIndex==FAKE_INDEX) {
-				break;
-			}
-			finalSlides.add(slides.get(bestIndex));
-			usedIndexes.add(bestIndex);
-			currentIndex = bestIndex;
+		while(!slides.isEmpty()) {
+			final Slide bestSlide = getHighestScoreSlide(slides, currentSlide);
+			finalSlides.add(bestSlide);
+			currentSlide = bestSlide;
+			slides.remove(currentSlide);
 		}
 		
 		return new Slideshow(finalSlides);
 	}
-	
-	private int[][] generateScoreMatrix(List<Slide> slides) {
-		final int[][] matrix = new int[slides.size()][slides.size()];
-		
-		for(int i=0; i<slides.size(); i++) {
-			for(int j=0; j<slides.size(); j++) {
-				final int score = calculateScore(slides.get(i), slides.get(j));
-				matrix[i][j] = score;
-			}
-		}
-		return matrix;
-	}
+//	
+//	private short[][] generateScoreMatrix(List<Slide> slides) {
+//		final short[][] matrix = new short[slides.size()][slides.size()];
+//		
+//		for(int i=0; i<slides.size(); i++) {
+//			for(int j=0; j<slides.size(); j++) {
+//				final int score = calculateScore(slides.get(i), slides.get(j));
+//				matrix[i][j] = (short) score;
+//			}
+//		}
+//		return matrix;
+//	}
 	
 	private List<Slide> generateSlides(Set<Photo> photos) {
 		final Map<Direction, Set<Photo>> photosByDirection = photos.stream()
@@ -91,21 +85,22 @@ public class SlideshowResolver {
 		return Math.min(commonSet.size(), Math.min(aDifference.size(), tagsB.size()));
 	}
 	
-	private int getInitialSlideIndex(List<Slide> slides, int[][] matrix) {
-		return 0;
+	private Slide getInitialSlide(List<Slide> slides) {
+		return slides.get(0);
 	}
 	
-	private int getHighestScoreIndex(int[] scores) {
-		int highestIndex = FAKE_INDEX;
+	private Slide getHighestScoreSlide(List<Slide> slides, Slide currentSlide) {
+		Slide bestSlide = null;
 		int highestScore = -1;
-		for(int i=0; i<scores.length; i++) {
-			final int currentScore = scores[i];
-			if(currentScore>highestScore && !usedIndexes.contains(i)) {
+	
+		for(Slide slide : slides) {
+			final int currentScore = calculateScore(slide, currentSlide);
+			if(currentScore>highestScore) {
 				highestScore = currentScore;
-				highestIndex = i;
+				bestSlide = slide;
 			}
 		}
-		return highestIndex;
+		return bestSlide;
 	}
 	
 }
