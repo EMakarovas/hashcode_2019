@@ -119,9 +119,6 @@ public class SlideshowResolver {
 	
 		for(Slide slide : slides) {
 			final int currentScore = calculateScore(slide, currentSlide);
-			if(currentScore>1) {
-				return slide;
-			}
 			if(currentScore>highestScore) {
 				highestScore = currentScore;
 				bestSlide = slide;
@@ -135,12 +132,32 @@ public class SlideshowResolver {
 		final Set<Slide> returnSet = new HashSet<Slide>();
 		while(photoList.size()>1) {
 			final Photo a = photoList.get(0);
-			final Photo b = photoList.get(1);	
-			returnSet.add(new Slide(new HashSet<Photo>(Arrays.asList(a, b))));
 			photoList.remove(a);
+			Photo b = getPhotoWithLeastCorrespondingTags(a, photoList);
+			returnSet.add(new Slide(new HashSet<Photo>(Arrays.asList(a, b))));
 			photoList.remove(b);
 		}
 		return returnSet;
+	}
+	
+	private Photo getPhotoWithLeastCorrespondingTags(Photo a, List<Photo> photoList) {
+		int lowestCorrespondingNumber = Integer.MAX_VALUE;
+		Photo bestPhoto = null;
+		for(int i=0; i<photoList.size(); i++) {
+			final Photo b = photoList.get(i);
+			final Set<String> aTags = new HashSet<>(a.getTags());
+			final Set<String> bTags = new HashSet<>(b.tags);
+			aTags.retainAll(bTags);
+			final int correspondingTagsCount = aTags.size();
+			if(correspondingTagsCount==0) {
+				return b;
+			}
+			if(correspondingTagsCount<lowestCorrespondingNumber) {
+				lowestCorrespondingNumber = correspondingTagsCount;
+				bestPhoto = b;
+			}
+		}
+		return bestPhoto;
 	}
 	
 }
