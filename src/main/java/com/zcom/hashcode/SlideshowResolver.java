@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import com.zcom.hashcode.photo.Direction;
 import com.zcom.hashcode.photo.Photo;
 import com.zcom.hashcode.photo.Slide;
@@ -25,7 +24,7 @@ public class SlideshowResolver {
 		
 		Slide currentSlide = getInitialSlide(slides);
 		
-		final List<Slide> finalSlides = new ArrayList<Slide>();
+		final List<Slide> finalSlides = new ArrayList<>();
 		finalSlides.add(currentSlide);
 		for(String tag : currentSlide.getTags()) {
 			slidesByTag.get(tag).remove(currentSlide);
@@ -46,13 +45,13 @@ public class SlideshowResolver {
 	}
 	
 	private Map<String, Set<Slide>> generateSlidesByTag(List<Slide> slides) {
-		final Map<String, Set<Slide>> map = new HashMap<String, Set<Slide>>();
+		final Map<String, Set<Slide>> map = new HashMap<>();
 		
 		for(Slide slide : slides) {
 			for(String tag : slide.getTags()) {
 				Set<Slide> set = map.get(tag);
 				if(set==null) {
-					set = new HashSet<Slide>();
+					set = new HashSet<>();
 					map.put(tag, set);
 				}
 				set.add(slide);
@@ -88,12 +87,13 @@ public class SlideshowResolver {
 	private int calculateScore(Slide a, Slide b) {
 		final Set<String> tagsA = a.getTags();
 		final Set<String> tagsB = b.getTags();
-		final Set<String> commonSet = new HashSet<String>(tagsA);
+		final Set<String> commonSet = new HashSet<>(tagsA);
 		commonSet.retainAll(tagsB);
-		final Set<String> aDifference = new HashSet<String>(tagsA);
+		final Set<String> aDifference = new HashSet<>(tagsA);
 		aDifference.removeAll(tagsB);
-		tagsB.removeAll(tagsA);
-		return Math.min(commonSet.size(), Math.min(aDifference.size(), tagsB.size()));
+	    final Set<String> bDifference = new HashSet<>(tagsB);
+	    bDifference.removeAll(tagsA);
+		return Math.min(commonSet.size(), Math.min(aDifference.size(), bDifference.size()));
 	}
 	
 	private Slide getInitialSlide(List<Slide> slides) {
@@ -128,13 +128,13 @@ public class SlideshowResolver {
 	}
 	
 	private Set<Slide> generateSlidesWithVerticalPhotos(Set<Photo> photos) {
-		final List<Photo> photoList = new ArrayList<Photo>(photos);
-		final Set<Slide> returnSet = new HashSet<Slide>();
+		final List<Photo> photoList = new ArrayList<>(photos);
+		final Set<Slide> returnSet = new HashSet<>();
 		while(photoList.size()>1) {
 			final Photo a = photoList.get(0);
 			photoList.remove(a);
 			Photo b = getPhotoWithLeastCorrespondingTags(a, photoList);
-			returnSet.add(new Slide(new HashSet<Photo>(Arrays.asList(a, b))));
+			returnSet.add(new Slide(new HashSet<>(Arrays.asList(a, b))));
 			photoList.remove(b);
 		}
 		return returnSet;
