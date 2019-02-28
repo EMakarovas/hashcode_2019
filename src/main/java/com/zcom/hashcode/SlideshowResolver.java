@@ -66,7 +66,7 @@ public class SlideshowResolver {
 		}
 		final Set<String> tagsToRemove = new HashSet<String>();
 		for(String tag : map.keySet()) {
-			if(map.get(tag).size()>100) {
+			if(map.get(tag).size()>3000) {
 				tagsToRemove.add(tag);
 			}
 		}
