@@ -6,4 +6,7 @@ public class Slide {
 
 	public final Set<Photo> photos;
 	
+	int tagsSize;
+	Set<String> tags;
+	
 }
